@@ -5,7 +5,7 @@ namespace: default
 apps:
   nodeapp:
     repository: harikrishnapachava/nodeapp
-    tag: "2.0.0"
+    tag: "15401853508"
     replicaCount: 3
     securityContext:
       runAsUser: 1000
