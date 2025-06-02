@@ -1,0 +1,59 @@
+# for discovering services and pods
+serviceAccount: discovery-sa
+namespace: default
+
+apps:
+  nodeapp:
+    repository: harikrishnapachava/nodeapp
+    tag: "2.0.0"
+    replicaCount: 3
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+  reactapp:
+    repository: harikrishnapachava/reactapp
+    tag: "2.0.0"
+    replicaCount: 3
+    securityContext:
+      runAsUser: 1000
+      runAsGroup: 1000
+      fsGroup: 1000
+  pullPolicy: Always
+
+database:
+  postgres:
+    nameOverride: ""
+    storageClassName: ebs-csi
+    storageName: postgres-persistent-storage
+    serviceName: postgres
+    secretName: postgres-credentials
+    postgresUser: admin
+    postgresPassword: admin
+    dbName: nodeapp
+    replicas: 2
+    port: 5432
+
+service:
+  reactapp:
+    name: reactapp-service
+    type: NodePort
+    protocol: TCP
+    externalPort: 80
+    internalPort: 80
+  nodeapp:
+    name: nodeapp-service
+    type: NodePort
+    protocol: TCP
+    externalPort: 80
+    internalPort: 80
+
+ingress:
+  reactapp:
+    name: react-ingress
+    ingressClassName: nginx
+
+resources:
+  staticHost: reactapp.local
+
+tolerations: []
