@@ -1,0 +1,24 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: threetier-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/harikrishnapachava/k8s_manifests_repo
+    targetRevision: HEAD
+    path: helm/threetier-app-chart
+    helm:
+      releaseName: threetier-app
+      valueFiles:
+      - values.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
