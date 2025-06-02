@@ -1,0 +1,27 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: threetier-app-alerts
+  namespace: {{ .Values.namespace }}
+  labels:
+    release: {{ .Release.Name }}
+spec:
+  groups:
+  - name: threetier-app.rules
+    rules:
+    - alert: HighRequestLatency
+      expr: rate(http_request_duration_seconds_sum[5m]) / rate(http_request_duration_seconds_count[5m]) > 1
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High request latency detected"
+        description: "{{ $labels.app }} has an average request latency above 1s for the last 5 minutes."
+    - alert: PodCrashLooping
+      expr: kube_pod_container_status_restarts_total{namespace="{{ .Values.namespace }}"} > 5
+      for: 10m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod crash looping detected"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last 10 minutes."

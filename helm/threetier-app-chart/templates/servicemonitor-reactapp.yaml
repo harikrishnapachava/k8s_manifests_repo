@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ template "reactapp.name" . }}-monitor
+  namespace: {{ .Values.namespace }}
+  labels:
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ template "reactapp.name" . }}
+      release: {{ .Release.Name }}
+  endpoints:
+  - port: {{ .Values.service.reactapp.name }}
+    path: /metrics
+    interval: 15s
