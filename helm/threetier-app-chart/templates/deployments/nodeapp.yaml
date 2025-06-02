@@ -1,0 +1,88 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "nodeapp.name" . }}
+  labels:
+    app: {{ template "nodeapp.name" . }}
+    chart: {{ template "nodeapp.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  replicas: {{ .Values.apps.nodeapp.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "nodeapp.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "nodeapp.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount }}
+      securityContext:
+        {{- toYaml .Values.apps.nodeapp.securityContext | nindent 8 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: {{ template "nodeapp.name" . }}
+                  release: {{ .Release.Name }}
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: pod-dependency
+          image: harikrishnapachava/pod-dependency-init-container:1.0
+          env:
+          - name: POD_LABELS
+            value: "app.kubernetes.io/name={{ include "postgres.name" . }}"
+          - name: MAX_RETRY
+            value: "10"
+          - name: RETRY_TIME_OUT
+            value: "5000"
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.apps.nodeapp.repository }}:{{ .Values.apps.nodeapp.tag }}
+          env:
+          - name: DB_URL
+            value: {{ template "postgres.dburl" . }}
+          - name: DB_PORT
+            value: !!str {{ .Values.database.postgres.port }}
+          - name: DB_NAME
+            value: {{ .Values.database.postgres.dbName }}
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.database.postgres.secretName }}
+                key: postgres-user
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: {{ .Values.database.postgres.secretName }}
+                key: postgres-password
+          imagePullPolicy: {{ .Values.apps.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.nodeapp.internalPort }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.nodeapp.internalPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+    {{- end }}

@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ template "reactapp.name" . }}
+  labels:
+    app: {{ template "reactapp.name" . }}
+    chart: {{ template "nodeapp.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+  replicas: {{ .Values.apps.reactapp.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ template "reactapp.name" . }}
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ template "reactapp.name" . }}
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccount }}
+      securityContext:
+        {{- toYaml .Values.apps.reactapp.securityContext | nindent 8 }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: {{ template "reactapp.name" . }}
+                  release: {{ .Release.Name }}
+              topologyKey: kubernetes.io/hostname
+      initContainers:
+        - name: pod-dependency
+          image: harikrishnapachava/pod-dependency-init-container:1.0
+          env:
+          - name: POD_LABELS
+            value: "app={{ template "nodeapp.name" . }}"
+          - name: MAX_RETRY
+            value: "12"
+          - name: RETRY_TIME_OUT
+            value: "10000"
+      containers:
+        - name: {{ .Chart.Name }}
+          image: {{ .Values.apps.reactapp.repository }}:{{ .Values.apps.reactapp.tag }}
+          env:
+          - name: NODE_APP_URL
+            value: {{ printf "http://%s" .Values.service.nodeapp.name }}
+          imagePullPolicy: {{ .Values.apps.pullPolicy }}
+          ports:
+            - containerPort: {{ .Values.service.reactapp.internalPort }}
+          livenessProbe:
+            httpGet:
+              path: /
+              port: {{ .Values.service.reactapp.internalPort }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+{{ toYaml .Values.resources | indent 12 }}
+    {{- if .Values.nodeSelector }}
+      nodeSelector:
+{{ toYaml .Values.nodeSelector | indent 8 }}
+    {{- end }}
+    {{- if .Values.tolerations }}
+      tolerations:
+{{ toYaml .Values.tolerations | indent 8 }}
+    {{- end }}
