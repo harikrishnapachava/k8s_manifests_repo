@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ template "nodeapp.name" . }}-pdb
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ template "nodeapp.name" . }}
+    release: {{ .Release.Name }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ template "nodeapp.name" . }}
+      release: {{ .Release.Name }}

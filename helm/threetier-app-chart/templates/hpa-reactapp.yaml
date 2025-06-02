@@ -1,0 +1,22 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ template "reactapp.name" . }}-hpa
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ template "reactapp.name" . }}
+    release: {{ .Release.Name }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ template "reactapp.name" . }}
+  minReplicas: {{ .Values.apps.reactapp.replicaCount }}
+  maxReplicas: {{ add .Values.apps.reactapp.replicaCount 2 }}
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
