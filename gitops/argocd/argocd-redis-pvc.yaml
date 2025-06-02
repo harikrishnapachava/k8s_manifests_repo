@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: argocd-redis-data
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: argocd-redis
+    app.kubernetes.io/part-of: argocd
+spec:
+  accessModes:
+    - ReadWriteOnce
+  storageClassName: argocd-storage
+  resources:
+    requests:
+      storage: 5Gi
