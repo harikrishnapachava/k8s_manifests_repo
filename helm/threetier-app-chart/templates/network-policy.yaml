@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: threetier-app-network-policy
+  namespace: {{ .Values.namespace }}
+spec:
+  podSelector:
+    matchLabels:
+      release: {{ .Release.Name }}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: {{ template "reactapp.name" . }}
+          release: {{ .Release.Name }}
+    ports:
+    - protocol: TCP
+      port: {{ .Values.service.nodeapp.internalPort }}
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: {{ .Values.service.reactapp.internalPort }}
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/name: {{ include "postgres.name" . }}
+          app.kubernetes.io/instance: {{ .Release.Name }}
+    ports:
+    - protocol: TCP
+      port: {{ .Values.database.postgres.port }}
+  - to:
+    - podSelector:
+        matchLabels:
+          app: {{ template "nodeapp.name" . }}
+          release: {{ .Release.Name }}
+    ports:
+    - protocol: TCP
+      port: {{ .Values.service.nodeapp.internalPort }}
