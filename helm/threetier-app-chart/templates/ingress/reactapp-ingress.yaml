@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Values.ingress.reactapp.name }}
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    kubernetes.io/ingress.class: nginx
+    # AWS-specific annotations for ALB (optional, if using ALB instead of NGINX)
+    # alb.ingress.kubernetes.io/scheme: internet-facing
+    # alb.ingress.kubernetes.io/target-type: ip
+spec:
+  ingressClassName: {{ .Values.ingress.reactapp.ingressClassName }}
+  rules:
+  - host: {{ .Values.resources.staticHost }}
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: {{ .Values.service.reactapp.name }}
+            port:
+              number: {{ .Values.service.reactapp.externalPort }}
+
+
