@@ -1,0 +1,82 @@
+enabled: true
+replicaCount: 2
+
+image:
+  repository: postgres
+  pullPolicy: IfNotPresent
+  versionOverride: "13.12"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+terminationGracePeriodSeconds: 10
+
+secretName: postgres-credentials
+
+environmentVariables:
+  POSTGRES_USER: admin
+  POSTGRES_PASSWORD: admin
+  POSTGRES_DB: nodeapp
+  POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+
+serviceAccount:
+  create: true
+  name: discovery-sa
+
+podAnnotations: {}
+
+podSecurityContext:
+  runAsUser: 999
+  runAsGroup: 999
+  fsGroup: 999
+
+securityContext: {}
+
+service:
+  type: ClusterIP
+  port: 5432
+  annotations: {}
+  headless:
+    annotations: {}
+
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+  hosts:
+    - host: postgres.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []
+
+resources: {}
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+volume:
+  enabled: true
+  className: ebs-csi
+  storageName: postgres-persistent-storage
+  size: 100Gi
+  mountPath: /var/lib/postgresql/data
+
+tests:
+  enabled: true
+
+livenessProbe:
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
