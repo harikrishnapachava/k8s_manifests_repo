@@ -13,7 +13,7 @@ apps:
       fsGroup: 1000
   reactapp:
     repository: harikrishnapachava/reactapp
-    tag: "15402967840"
+    tag: "15406752498"
     replicaCount: 3
     securityContext:
       runAsUser: 1000
